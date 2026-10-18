@@ -1,0 +1,43 @@
+name: Consumer CI (OrderService)
+on:
+  push:
+    paths: ["consumer/**", ".github/workflows/consumer.yml"]
+  workflow_dispatch:
+
+jobs:
+  consumer:
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: consumer
+    env:
+      PACT_BROKER_BASE_URL: http://localhost:9292
+      GIT_COMMIT: ${{ github.sha }}
+      GIT_BRANCH: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install
+
+      - name: 1. Run consumer tests (generates pact file)
+        run: npm test
+
+      - name: 2. Publish pact to Pact Broker
+        run: npm run pact:publish
+
+      - name: 3. Can I deploy OrderService?
+        run: >
+          npx pact-broker can-i-deploy
+          --pacticipant OrderService
+          --version $GIT_COMMIT
+          --to-environment production
+          --retry-while-unknown 3 --retry-interval 10
+
+      - name: 4. Record deployment
+        if: github.ref == 'refs/heads/main'
+        run: >
+          npx pact-broker record-deployment
+          --pacticipant OrderService
+          --version $GIT_COMMIT
+          --environment production
