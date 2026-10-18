@@ -2,8 +2,10 @@ const express = require('express');
 const app = express();
 
 const users = {
-  // 1: { id: 1, name: 'Alice', email: 'alice@example.com' },
-  1: { id: 1, fullName: 'Alice', email: 'alice@example.com' },
+  // GOOD (compatible) version:
+  1: { id: 1, name: 'Alice', email: 'alice@example.com' },
+  // BREAKING version (used in the demo): rename "name" -> "fullName"
+  // 1: { id: 1, fullName: 'Alice', email: 'alice@example.com' },
 };
 
 app.get('/users/:id', (req, res) => {
